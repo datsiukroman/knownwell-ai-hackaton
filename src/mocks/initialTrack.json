@@ -1,0 +1,67 @@
+[
+  {
+    "id": "goal-1",
+    "type": "goal",
+    "title": "Daily macros",
+    "details": "Carbs: <120g; Protein: 70-120g (20-30g per meal); Fiber: 25-30g",
+    "timestamp": 1710000000000
+  },
+  {
+    "id": "summary-1",
+    "type": "summary",
+    "title": "Weekly check-in",
+    "details": "Patient reported steady progress; added more protein at lunch.",
+    "timestamp": 1710060000000
+  }
+,
+  {
+    "id": "meal-today-1",
+    "type": "milestone",
+    "title": "Lunch — Grilled Salmon",
+    "details": "{\"calories\":600,\"protein_g\":45,\"carbs_g\":12,\"fiber_g\":2,\"summary\":\"Grilled salmon with broccoli and rice.\"}",
+    "timestamp": "2026-01-22T12:30:00Z"
+  },
+  {
+    "id": "meal-today-2",
+    "type": "milestone",
+    "title": "Breakfast — Eggs & Avocado",
+    "details": "{\"calories\":420,\"protein_g\":24,\"carbs_g\":10,\"fiber_g\":5,\"summary\":\"Scrambled eggs with avocado and whole grain toast.\"}",
+    "timestamp": "2026-01-22T08:15:00Z"
+  },
+  {
+    "id": "meal-1",
+    "type": "milestone",
+    "title": "Lunch — Chicken salad",
+    "details": "{\"calories\":520,\"protein_g\":38,\"carbs_g\":24,\"fiber_g\":6,\"summary\":\"Grilled chicken with mixed greens, avocado, and quinoa.\"}",
+    "timestamp": 1710100000000
+  },
+  {
+    "id": "meal-2",
+    "type": "milestone",
+    "title": "Breakfast — Oatmeal",
+    "details": "{\"calories\":320,\"protein_g\":12,\"carbs_g\":48,\"fiber_g\":8,\"summary\":\"Oats with banana, peanut butter and chia.\"}",
+    "timestamp": 1710020000000
+  },
+  {
+    "id": "meal-3",
+    "type": "milestone",
+    "title": "Snack — Yogurt + berries",
+    "details": "{\"calories\":150,\"protein_g\":8,\"carbs_g\":18,\"fiber_g\":2,\"summary\":\"Greek yogurt with mixed berries.\"}",
+    "timestamp": 1710040000000
+  }
+  ,
+  {
+    "id": "weekly-1",
+    "type": "weekly",
+    "title": "Weekly summary — Jan 12–18",
+    "details": "{\"summary\":\"Stable protein intake; increase fiber next week.\"}",
+    "timestamp": "2026-01-18T09:00:00Z"
+  },
+  {
+    "id": "weekly-2",
+    "type": "weekly",
+    "title": "Weekly summary — Jan 19–25",
+    "details": "{\"summary\":\"Good hydration and variety; watch carbs.\"}",
+    "timestamp": "2026-01-20T09:00:00Z"
+  }
+]

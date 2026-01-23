@@ -1,0 +1,200 @@
+@primary: #5b4fc6;
+@muted: #f6f7fb;
+@bubble-user: #dff1ff;
+@bubble-bot: #ffffff;
+
+@accent: #00a3ff;
+@muted-text: #6b7280;
+
+@goal-green: #C4EB0C;
+@protein-color: #ff6b6b;
+@carbs-color: #4bc0ff;
+@fats-color: #ffb86b;
+@fiber-color: #7ce6b6;
+
+html, body, #root { height: 100%; }
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  margin: 0;
+  background: linear-gradient(180deg, #ffffff 0%, @muted 100%);
+  color: #0f1724;
+}
+
+/* When on chat page, keep body fixed and allow only .messages to scroll */
+body.chat-page { overflow: hidden }
+
+.app-header { 
+  background: @primary;
+  color: white;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 18px rgba(91,79,198,0.12);
+}
+.app-header h1 { margin: 0; font-size: 18px; font-weight: 600 }
+.app-header nav a { color: rgba(255,255,255,0.9); margin-left: 12px; text-decoration: none; font-size: 14px }
+.app-header nav a.active { background: rgba(255,255,255,0.12); color: #fff; padding: 8px 12px; border-radius: 8px; font-weight: 600; transition: background 160ms ease }
+
+.app-root { min-height: 100vh; display: flex; flex-direction: column }
+.app-main { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column }
+
+/* Center page content and constrain width */
+.app-main > * { width: 100%; max-width: 1000px; margin: 0 auto; box-sizing: border-box }
+.chat-root { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; border-radius: 12px; overflow: visible; background: white; box-shadow: 0 6px 24px rgba(16,24,40,0.04) }
+.messages { flex: 1; overflow: auto; padding: 14px; padding-bottom: 140px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 320px) }
+.message { display:flex; gap:12px; align-items: flex-start }
+.message.user { flex-direction: row-reverse }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; color: white; display:flex; align-items:center; justify-content:center; font-weight:700 }
+.chat .message .user-icon {
+  color: #fff;
+  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar .logo { background: transparent }
+.avatar img.logo-img { width: 20px; height: 20px; display: block }
+.bubble-wrap { max-width: calc(100% - 72px) }
+.bubble { padding: 12px 14px; border-radius: 18px; max-width: 100%; box-shadow: 0 6px 18px rgba(16,24,40,0.06); font-size: 14px; line-height:1.4 }
+.message.user .bubble { background: @primary; color: white }
+.message.bot .bubble { background: #f7ffe6; color: #0f1724 }
+.meta { font-size: 12px; color: @muted-text; margin-top: 8px }
+
+.quick-chips { display:flex; flex-direction:column; gap:12px; margin-top: 8px }
+.chip { border: 2px solid @primary; color: @primary; padding: 10px 16px; border-radius: 999px; background: white; max-width: 80%; text-align: left; cursor: pointer; transition: background 140ms ease, box-shadow 140ms ease }
+.chip:hover { background: fade(@primary, 6%); box-shadow: 0 6px 18px rgba(16,24,40,0.06) }
+.chip:focus { outline: none; box-shadow: 0 0 0 4px fade(@primary, 14%) }
+
+.image-preview img { max-width: 220px; border-radius: 10px; display:block; margin-top: 10px }
+.composer { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; display:flex; gap:8px; padding: 12px 16px; align-items:center; background: white; border-radius: 0; width: min(1000px, calc(100% - 40px)); box-sizing: border-box; z-index: 999 }
+.composer-input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #eef0f6; box-sizing: border-box; background: #f6f7fb }
+.icon-button { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background: transparent; border: none; cursor: pointer; transition: background 140ms ease, box-shadow 160ms ease }
+.icon-button:hover { background: fade(@primary, 8%); box-shadow: 0 6px 18px rgba(16,24,40,0.06) }
+.send { background: transparent; border: none; color: @primary; font-size: 20px; width:48px; height:48px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; transition: background 140ms ease, box-shadow 160ms ease }
+.send:hover { background: fade(@primary, 10%); box-shadow: 0 6px 18px rgba(16,24,40,0.06) }
+
+.track-list { list-style: none; padding: 0 }
+.track-list li { background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); padding: 12px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 6px 18px rgba(16,24,40,0.04) }
+.track-list .details { color: @muted-text; margin-top:6px }
+
+.goal-card { background: white; padding: 12px; border-radius: 8px }
+
+/* Today's goals widgets */
+.today-goals { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 8px 30px rgba(16,24,40,0.04); margin-bottom: 18px }
+.today-goals h3 { margin: 0 0 12px; font-size: 16px }
+.macros-row { display:flex; gap: 24px; align-items: flex-start }
+.macro { display:flex; flex-direction:column; align-items:center; width: 160px }
+.macro .ring { --thickness: 4px; --size: 110px; width: var(--size); height: var(--size); border-radius: 50%; padding: var(--thickness); box-sizing: border-box; background: conic-gradient(@goal-green calc(var(--pct) * 1turn), #ececec 0); display:flex; align-items:center; justify-content:center }
+
+/* Per-macro colored rings */
+.macro.protein .ring { background: conic-gradient(@protein-color calc(var(--pct) * 1turn), #ececec 0) }
+.macro.carbs .ring { background: conic-gradient(@carbs-color calc(var(--pct) * 1turn), #ececec 0) }
+.macro.fats .ring { background: conic-gradient(@fats-color calc(var(--pct) * 1turn), #ececec 0) }
+.macro.fiber .ring { background: conic-gradient(@fiber-color calc(var(--pct) * 1turn), #ececec 0) }
+.macro .ring-inner { width: 100%; height: 100%; border-radius: 50%; background: #fafafa; display:flex; align-items:center; justify-content:center; box-shadow: 0 10px 28px rgba(16,24,40,0.06); transition: box-shadow 180ms ease, transform 180ms ease, background 160ms ease }
+.macro .ring-inner:hover { transform: scale(1.04); box-shadow: 0 20px 48px rgba(16,24,40,0.12); cursor: pointer }
+
+/* Hover background tint per macro */
+.macro.protein .ring-inner:hover { background: fade(@protein-color, 10%) }
+.macro.carbs .ring-inner:hover { background: fade(@carbs-color, 10%) }
+.macro.fats .ring-inner:hover { background: fade(@fats-color, 10%) }
+.macro.fiber .ring-inner:hover { background: fade(@fiber-color, 10%) }
+.macro .value { font-size: 22px; font-weight: 700 }
+.macro .sub { margin-top: 10px; color: @muted-text; font-size: 13px }
+.macro .label { margin-top: 6px; font-size: 13px; color: @muted-text }
+
+/* Daily logs section */
+.daily-logs { background: white; padding: 16px; border-radius: 8px; margin-bottom: 18px }
+.daily-logs h3 { margin: 0 0 12px; font-size: 16px }
+.logs-row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap }
+.log-card { padding: 12px; border: 1px solid #eef0f6; background: #fff; border-radius: 8px; min-width: 180px; text-align: left; cursor: pointer }
+.log-card:hover {
+  background: fade(@primary, 6%);
+  box-shadow: 0 6px 16px rgba(16,24,40,0.04);
+}
+
+/* Keep focus non-shifting: use ring instead of adding border-left */
+.log-card:focus {
+  outline: none;
+  background: fade(@primary, 6%);
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+}
+.log-title { font-weight: 700 }
+.log-ts { font-size: 12px; color: @muted-text; margin-top: 8px }
+.empty { color: @muted-text; padding: 8px 0 }
+
+/* Modal for viewing a single log */
+.log-modal-backdrop { position: fixed; inset: 0; background: rgba(16,24,40,0.6); display:flex; align-items: center; justify-content: center; z-index: 2000 }
+.log-modal { background: white; padding: 20px; border-radius: 8px; width: min(680px, calc(100% - 40px)); box-shadow: 0 20px 40px rgba(16,24,40,0.18) }
+.log-modal .close { float: right; background: none; border: none; font-size: 16px; cursor: pointer }
+ 
+/* Plain list style for protein logs in the macro modal */
+.log-list-plain { padding: 0; margin: 0 }
+.log-list-plain ul { list-style: none; padding: 0; margin: 0 }
+.log-list-plain .log-list-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 10px 12px; border-bottom: 1px solid #f0f2f6; background: transparent; cursor: pointer }
+.log-list-plain .log-list-item { display:flex; flex-direction:column; align-items:stretch; gap:8px; padding: 12px; border-bottom: 1px solid #f0f2f6; background: transparent }
+.log-list-plain .log-list-item:hover { background: transparent; }
+.log-list-plain .log-title { font-weight: 700 }
+.log-list-plain .log-ts { font-size: 12px; color: @muted-text }
+.log-list-plain .log-sub { font-size: 13px; color: @muted-text; padding: 6px 8px; background: #fafafa; border-radius: 6px }
+.log-list-plain .log-expanded { display:flex; gap:8px; flex-wrap:wrap }
+.log-modal .log-list-plain .log-list-item { cursor: default }
+.log-modal .log-list-plain .log-list-item:hover { background: transparent }
+.log-modal h4 { margin-top: 0 }
+.log-meta { margin-top: 24px; display:flex; gap:12px; flex-wrap:wrap }
+.log-meta .meta-item { background: #fafafa; padding: 10px 12px; border-radius: 6px; min-width: 120px }
+.log-meta .meta-item.calories { background: fade(@primary, 12%); border-left: 4px solid fade(@primary, 28%); }
+.log-meta .meta-item.protein { background: fade(@protein-color, 12%); border-left: 4px solid fade(@protein-color, 28%); }
+.log-meta .meta-item.carbs { background: fade(@carbs-color, 10%); border-left: 4px solid fade(@carbs-color, 28%); }
+.log-meta .meta-item.fats { background: fade(@fats-color, 10%); border-left: 4px solid fade(@fats-color, 28%); }
+.log-meta .meta-item.fiber { background: fade(@fiber-color, 12%); border-left: 4px solid fade(@fiber-color, 28%); }
+.log-raw { margin-top: 12px; font-size: 13px; color: @muted-text; white-space: pre-wrap }
+/* .log-summary styles removed */
+
+/* Weekly logs should share Daily logs styles */
+.weekly-logs { background: white; padding: 16px; border-radius: 8px; margin-bottom: 18px }
+.weekly-logs h3 { margin: 0 0 12px; font-size: 16px }
+
+@media (max-width: 720px) {
+  .macros-row { gap: 12px }
+  .macro { width: 110px }
+  .macro .ring { --size: 84px }
+  .macro .value { font-size: 18px }
+}
+
+.achievements-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 0; box-sizing: border-box; overflow: auto; max-height: calc(100vh - 80px) }
+.achievement-card { display:flex; flex-direction:column; align-items:center }
+.achievement-card .ring { --thickness: 4px; width: 140px; height: 140px; border-radius: 50%; padding: var(--thickness); box-sizing: border-box; background: conic-gradient(@goal-green calc(var(--pct) * 1turn), #ececec 0); display:flex; align-items:center; justify-content:center; }
+.achievement-card .inner { width: 100%; height: 100%; border-radius: 50%; background: #fafafa; display:flex; align-items:center; justify-content:center; box-shadow: 0 10px 28px rgba(16,24,40,0.06) }
+.achievement-card img { width: 84px; height: 84px }
+.achievement-card .label { margin-top: 12px; color: @muted-text; font-size: 15px; text-align:center; max-width: 140px }
+
+/* states */
+.achievement-card.in-progress .inner { filter: grayscale(1); opacity: 0.7 }
+.achievement-card.locked .inner { filter: grayscale(1); opacity: 0.45 }
+.achievement-card.complete .inner { filter: none; opacity: 1 }
+
+/* thinner ring effect: reduce thickness variable on very small screens */
+@media (max-width: 420px) {
+  .achievements-grid { grid-template-columns: repeat(2, 1fr) }
+  .achievement-card .ring { --thickness: 4px; width: 120px; height: 120px }
+  .achievement-card img { width: 64px; height: 64px }
+  .achievement-card .label { font-size: 13px }
+}
+
+/* Tooltip for achievements */
+.achievement-card { position: relative }
+/* fixed tooltip that sits to the right of the card and floats over everything */
+.achievement-tooltip { position: fixed; z-index: 9999; background: rgba(16,24,40,0.95); color: white; padding: 10px 12px; border-radius: 8px; font-size: 13px; max-width: 260px; width: 220px; box-shadow: 0 10px 26px rgba(16,24,40,0.16); transform: translateY(-50%); pointer-events: none }
+.achievement-tooltip::before { content: ''; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 8px solid rgba(16,24,40,0.95) }
+
+/* Goal form controls */
+.goal-form { width: 100% }
+.goal-form .goal-row { display: flex; gap: 8px; margin-bottom: 8px }
+.goal-form .goal-input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e6e9f2; box-sizing: border-box }
+.goal-form .goal-add { background: @accent; color: white; padding: 8px 12px; border-radius: 8px; border: none }
+.goal-form .goal-details { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #e6e9f2; min-height: 80px; box-sizing: border-box }
+

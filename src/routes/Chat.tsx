@@ -18,8 +18,7 @@ export default function Chat() {
   // quick reply examples shown like the design
   const quickReplies = [
     'Check the protein in my meal',
-    'I have ingredients. help me plan a meal',
-    'Help me choose from a menu'
+    'I have ingredients, help me plan a meal'
   ]
 
   useEffect(() => {

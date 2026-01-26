@@ -11,8 +11,6 @@
 @carbs-color: #4bc0ff;
 @fats-color: #ffb86b;
 @fiber-color: #7ce6b6;
-
-html, body, #root { height: 100%; }
 body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
   margin: 0;
@@ -24,6 +22,11 @@ body {
 body.chat-page { overflow: hidden }
 
 .app-header { 
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   background: @primary;
   color: white;
   padding: 14px 18px;
@@ -33,10 +36,17 @@ body.chat-page { overflow: hidden }
   box-shadow: 0 4px 18px rgba(91,79,198,0.12);
 }
 .app-header h1 { margin: 0; font-size: 18px; font-weight: 600 }
-.app-header nav a { color: rgba(255,255,255,0.9); margin-left: 12px; text-decoration: none; font-size: 14px }
-.app-header nav a.active { background: rgba(255,255,255,0.12); color: #fff; padding: 8px 12px; border-radius: 8px; font-weight: 600; transition: background 160ms ease }
+.app-header nav { display: flex; align-items: center; gap: 2px }
+.app-header nav a { color: rgba(255,255,255,0.95); margin-left: 0; text-decoration: none; font-size: 14px; padding: 8px 12px; border-radius: 8px; display: inline-flex; align-items: center; font-weight: 600; box-sizing: border-box; transition: background 160ms ease, color 160ms ease }
 
-.app-root { min-height: 100vh; display: flex; flex-direction: column }
+/* logout button in nav should match link hover behavior */
+.app-header nav .nav-logout { padding: 8px 12px; border-radius: 8px; background: transparent; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background 160ms ease, color 160ms ease }
+.app-header nav .nav-logout:hover { background: rgba(255,255,255,0.06); color: #fff }
+.app-header nav a:hover { background: rgba(255,255,255,0.06) }
+.app-header nav .nav-username { margin-left: 12px; color: rgba(255,255,255,0.95); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center }
+.app-header nav a.active { background: rgba(255,255,255,0.12); color: #fff }
+
+.app-root { min-height: 100vh; display: flex; flex-direction: column; padding-top: 56px }
 .app-main { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column }
 
 /* Center page content and constrain width */
@@ -197,4 +207,25 @@ body.chat-page { overflow: hidden }
 .goal-form .goal-input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e6e9f2; box-sizing: border-box }
 .goal-form .goal-add { background: @accent; color: white; padding: 8px 12px; border-radius: 8px; border: none }
 .goal-form .goal-details { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #e6e9f2; min-height: 80px; box-sizing: border-box }
+
+
+/* Create Account page */
+.create-account-page { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(16,24,40,0.04); margin: 18px auto; width: 100%; max-width: 520px; box-sizing: border-box }
+.create-account-page h2 { margin: 0 0 14px; font-size: 18px }
+.create-account-page form { width: 100% }
+.create-account-page .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px }
+.create-account-page label { font-weight: 500; color: @muted-text; font-size: 13px }
+.create-account-page input[type="text"],
+.create-account-page input[type="email"],
+.create-account-page input[type="number"],
+.create-account-page input[type="password"] { padding: 12px; border-radius: 8px; border: 1px solid #eef0f6; background: #fff; box-sizing: border-box; font-size: 14px }
+.create-account-page input:focus { outline: none; box-shadow: 0 6px 18px rgba(16,24,40,0.06); border-color: fade(@primary, 60%) }
+.create-account-page .error { color: @protein-color; font-size: 13px; margin-top: 6px }
+.create-account-page .form-actions { margin-top: 24px; display: flex; justify-content: flex-end; }
+.create-account-page .form-actions button { background: @primary; color: #fff; padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600 }
+.create-account-page .form-actions button:hover { background: darken(@primary, 6%); box-shadow: none }
+
+@media (max-width: 720px) {
+  .create-account-page { padding: 16px; margin: 12px; }
+}
 

@@ -44,15 +44,20 @@ body.chat-page { overflow: hidden }
 .app-header nav .nav-logout:hover { background: rgba(255,255,255,0.06); color: #fff }
 .app-header nav a:hover { background: rgba(255,255,255,0.06) }
 .app-header nav .nav-username { margin-left: 12px; color: rgba(255,255,255,0.95); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center }
+/* small role badge next to username */
+.app-header nav .nav-role { margin-left: 8px; background: rgba(255,255,255,0.08); color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 600; display: inline-block }
 .app-header nav a.active { background: rgba(255,255,255,0.12); color: #fff }
 
 .app-root { min-height: 100vh; display: flex; flex-direction: column; padding-top: 56px; box-sizing: border-box }
 .app-main { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column }
 
 /* Center page content and constrain width */
-.app-main > * { width: 100%; max-width: 1000px; margin: 0 auto; box-sizing: border-box }
+.app-main > * { width: 100%; max-width: 800px; margin: 0 auto; box-sizing: border-box }
 .chat-root { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; border-radius: 12px; overflow: visible; background: white; box-shadow: 0 6px 24px rgba(16,24,40,0.04) }
 .messages { flex: 1; overflow: auto; padding: 14px; padding-bottom: 140px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 320px) }
+
+/* History page-specific messages max-height */
+.history-page .messages { max-height: calc(100vh - 260px) }
 .message { display:flex; gap:12px; align-items: flex-start }
 .message.user { flex-direction: row-reverse }
 .avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; color: white; display:flex; align-items:center; justify-content:center; font-weight:700 }
@@ -73,13 +78,22 @@ body.chat-page { overflow: hidden }
 .message.bot .bubble { background: #f7ffe6; color: #0f1724 }
 .meta { font-size: 12px; color: @muted-text; margin-top: 8px }
 
-.quick-chips { display:flex; flex-direction:column; gap:12px; margin-top: 8px }
-.chip { border: 2px solid @primary; color: @primary; padding: 10px 16px; border-radius: 999px; background: white; max-width: 80%; text-align: left; cursor: pointer; transition: background 140ms ease, box-shadow 140ms ease }
-.chip:hover { background: fade(@primary, 6%); box-shadow: 0 6px 18px rgba(16,24,40,0.06) }
-.chip:focus { outline: none; box-shadow: 0 0 0 4px fade(@primary, 14%) }
+/* timestamp placed inside message bubble */
+.bubble .bubble-ts { font-size: 10px; color: @muted-text; margin-top: 6px; text-align: right }
+
+/* apply same timestamp style for image previews inside chat messages */
+.image-preview .bubble-ts { font-size: 10px; color: @muted-text; margin-top: 6px; text-align: right; display: block }
+
+/* timestamp contrast for user (purple) bubbles */
+.message.user .bubble .bubble-ts { color: #e6e6e6 }
+
+.quick-chips { display: none }
 
 .image-preview img { max-width: 220px; border-radius: 10px; display:block; margin-top: 10px }
-.composer { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; display:flex; gap:8px; padding: 12px 16px; align-items:center; background: white; border-radius: 0; width: min(1000px, calc(100% - 40px)); box-sizing: border-box; z-index: 999 }
+
+/* When the message contains only an image (no text bubble), remove extra top spacing */
+.message.image-only .image-preview img { margin-top: 0 }
+.composer { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; display:flex; gap:8px; padding: 12px 16px; align-items:center; background: white; border-radius: 0; width: min(800px, calc(100% - 40px)); box-sizing: border-box; z-index: 999 }
 .composer-input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #eef0f6; box-sizing: border-box; background: #f6f7fb }
 .icon-button { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background: transparent; border: none; cursor: pointer; transition: background 140ms ease, box-shadow 160ms ease }
 .icon-button:hover { background: fade(@primary, 8%); box-shadow: 0 6px 18px rgba(16,24,40,0.06) }
@@ -105,22 +119,23 @@ body.chat-page { overflow: hidden }
 .macro.fats .ring { background: conic-gradient(@fats-color calc(var(--pct) * 1turn), #ececec 0) }
 .macro.fiber .ring { background: conic-gradient(@fiber-color calc(var(--pct) * 1turn), #ececec 0) }
 .macro .ring-inner { width: 100%; height: 100%; border-radius: 50%; background: #fafafa; display:flex; align-items:center; justify-content:center; box-shadow: 0 10px 28px rgba(16,24,40,0.06); transition: box-shadow 180ms ease, transform 180ms ease, background 160ms ease }
-.macro .ring-inner:hover { transform: scale(1.04); box-shadow: 0 20px 48px rgba(16,24,40,0.12); cursor: pointer }
+.macro .ring-inner:hover { transform: none; box-shadow: 0 10px 28px rgba(16,24,40,0.06); cursor: default }
 
-/* Hover background tint per macro */
-.macro.protein .ring-inner:hover { background: fade(@protein-color, 10%) }
-.macro.carbs .ring-inner:hover { background: fade(@carbs-color, 10%) }
-.macro.fats .ring-inner:hover { background: fade(@fats-color, 10%) }
-.macro.fiber .ring-inner:hover { background: fade(@fiber-color, 10%) }
-.macro .value { font-size: 22px; font-weight: 700 }
-.macro .sub { margin-top: 10px; color: @muted-text; font-size: 13px }
-.macro .label { margin-top: 6px; font-size: 13px; color: @muted-text }
+/* Disable per-macro hover tints for Today's nutrition goals */
+.macro.protein .ring-inner:hover { background: #fafafa }
+.macro.carbs .ring-inner:hover { background: #fafafa }
+.macro.fats .ring-inner:hover { background: #fafafa }
+.macro.fiber .ring-inner:hover { background: #fafafa }
+.macro .value { font-size: 16px; font-weight: 600; color: @muted-text }
+/* Ensure ring-inner value is lighter and slightly smaller */
+.macro .ring-inner .value { font-size: 16px; font-weight: 600; color: @muted-text }
+.macro .label { margin-top: 10px; margin-bottom: 0; font-size: 13px; color: @muted-text }
 
 /* Daily logs section */
-.daily-logs { background: white; padding: 16px; border-radius: 8px; margin-bottom: 18px }
+.daily-logs { background: white; padding: 0; border-radius: 8px; margin-bottom: 18px }
 .daily-logs h3 { margin: 0 0 12px; font-size: 16px }
-.logs-row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap }
-.log-card { padding: 12px; border: 1px solid #eef0f6; background: #fff; border-radius: 8px; min-width: 180px; text-align: left; cursor: pointer }
+.logs-row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; max-height: 400px; overflow: auto }
+.log-card { padding: 12px; border: 1px solid #eef0f6; background: #fff; border-radius: 8px; width: 220px; text-align: left; cursor: pointer }
 .log-card:hover {
   background: fade(@primary, 6%);
   box-shadow: 0 6px 16px rgba(16,24,40,0.04);
@@ -132,9 +147,9 @@ body.chat-page { overflow: hidden }
   background: fade(@primary, 6%);
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
 }
-.log-title { font-weight: 700 }
+.log-title { font-weight: 700; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .log-ts { font-size: 12px; color: @muted-text; margin-top: 8px }
-.empty { color: @muted-text; padding: 8px 0 }
+.empty { color: @muted-text; padding: 8px 0; font-size: 14px }
 
 /* Modal for viewing a single log */
 .log-modal-backdrop { position: fixed; inset: 0; background: rgba(16,24,40,0.6); display:flex; align-items: center; justify-content: center; z-index: 2000 }
@@ -156,7 +171,7 @@ body.chat-page { overflow: hidden }
 .log-modal h4 { margin-top: 0 }
 .log-meta { margin-top: 24px; display:flex; gap:12px; flex-wrap:wrap }
 .log-meta .meta-item { background: #fafafa; padding: 10px 12px; border-radius: 6px; min-width: 120px }
-.log-meta .meta-item.calories { background: fade(@primary, 12%); border-left: 4px solid fade(@primary, 28%); }
+.log-meta .meta-item.calories { display: none }
 .log-meta .meta-item.protein { background: fade(@protein-color, 12%); border-left: 4px solid fade(@protein-color, 28%); }
 .log-meta .meta-item.carbs { background: fade(@carbs-color, 10%); border-left: 4px solid fade(@carbs-color, 28%); }
 .log-meta .meta-item.fats { background: fade(@fats-color, 10%); border-left: 4px solid fade(@fats-color, 28%); }
@@ -165,7 +180,7 @@ body.chat-page { overflow: hidden }
 /* .log-summary styles removed */
 
 /* Weekly logs should share Daily logs styles */
-.weekly-logs { background: white; padding: 16px; border-radius: 8px; margin-bottom: 18px }
+.weekly-logs { background: white; padding: 0; border-radius: 8px; margin-bottom: 18px }
 .weekly-logs h3 { margin: 0 0 12px; font-size: 16px }
 
 @media (max-width: 720px) {
@@ -242,6 +257,17 @@ body.chat-page { overflow: hidden }
   margin-right: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Typing dots animation for chat bot */
+.typing-dots { display: inline-flex; gap: 6px; align-items: center }
+.typing-dots span { display: inline-block; width: 6px; height: 6px; background: rgba(0,0,0,0.6); border-radius: 50%; transform: translateY(0); animation: typingDots 1s infinite ease-in-out }
+.typing-dots span:nth-child(2) { animation-delay: 0.12s }
+.typing-dots span:nth-child(3) { animation-delay: 0.24s }
+@keyframes typingDots { 0% { transform: translateY(0); opacity: 0.45 } 50% { transform: translateY(-4px); opacity: 1 } 100% { transform: translateY(0); opacity: 0.45 } }
+
+/* History page loading */
+.history-loading { display:flex; justify-content:center; align-items: center; padding: 12px; height: calc(100vh - 260px); box-sizing: border-box }
+.loading-circle { width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.08); border-top-color: @primary; border-radius: 50%; animation: spin 1s linear infinite }
 
 @media (max-width: 720px) {
   .create-account-page { padding: 16px; margin: 12px; }

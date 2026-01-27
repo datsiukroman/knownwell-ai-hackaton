@@ -3,44 +3,46 @@ import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../store'
 import mockApi from '../api/mockApi'
 import { setItems } from '../store/slices/trackSlice'
+import { useGetGoalsByPatientQuery } from '../store/api/goalsApi'
+import { useGetLogsByPatientQuery } from '../store/api/logsApi'
 
 export default function Track() {
-  const items = useSelector((s: RootState) => s.track.items)
   const dispatch = useDispatch()
   const [selectedLog, setSelectedLog] = useState<any | null>(null)
-  const [macroModal, setMacroModal] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
 
   useEffect(() => {
     mockApi.loadInitialData().then((res) => {
-      dispatch(setItems(res.track))
+      // normalize track details to use new API field names when possible
+      const normalized = (res.track || []).map((it: any) => {
+        try {
+          const details = typeof it.details === 'string' ? JSON.parse(it.details) : it.details
+          if (details) {
+            const norm = {
+              ...details,
+              proteinGrams: details.proteinGrams ?? details.protein_g ?? details.protein ?? details.proteinGrams,
+              carbGrams: details.carbGrams ?? details.carbs_g ?? details.carb ?? details.carbGrams,
+              fiberGrams: details.fiberGrams ?? details.fiber_g ?? details.fiber ?? details.fiberGrams,
+            }
+            return { ...it, details: typeof it.details === 'string' ? JSON.stringify(norm) : norm }
+          }
+        } catch (e) {
+          // ignore
+        }
+        return it
+      })
+      dispatch(setItems(normalized))
     })
   }, [dispatch])
-
-  const parseDetails = (it: any) => {
-    try {
-      return typeof it.details === 'string' ? JSON.parse(it.details) : it.details
-    } catch (e) {
-      return null
-    }
-  }
-
-  const weeklyItems = useMemo(() => items.filter((it) => it.type === 'weekly').map((it) => ({ ...it, parsed: parseDetails(it) })), [items])
-
-  const isSameDay = (tsA: number | string | Date, tsB: Date) => {
-    const a = new Date(tsA)
-    return a.getFullYear() === tsB.getFullYear() && a.getMonth() === tsB.getMonth() && a.getDate() === tsB.getDate()
-  }
 
   const macroKeyFor = (macro: string) => {
     switch (macro) {
       case 'protein':
-        return 'protein_g'
+        return 'proteinGrams'
       case 'carbs':
-        return 'carbs_g'
-      case 'fats':
-        return 'fat_g'
+        return 'carbGrams'
       case 'fiber':
-        return 'fiber_g'
+        return 'fiberGrams'
       default:
         return null
     }
@@ -52,18 +54,78 @@ export default function Track() {
 
   const filteredForMacro = (macro: string) => {
     const key = macroKeyFor(macro)
-    return items
-      .filter((it) => it.type === 'milestone')
-      .filter((it) => isSameDay(it.timestamp, today))
-      .map((it) => ({ ...it, parsed: parseDetails(it) }))
-      .filter((it) => {
-        if (!it.parsed || !key) return false
-        // support alternate fat field name
-        if (key === 'fat_g' && (it.parsed.fat_g === undefined && it.parsed.fats_g !== undefined)) {
-          return it.parsed.fats_g > 0
-        }
-        return (it.parsed[key] ?? 0) > 0
-      })
+    return []
+  }
+
+  const auth = useSelector((s: RootState) => s.auth)
+  const { data: goals } = useGetGoalsByPatientQuery(auth?.patientId || '', { skip: !auth?.patientId })
+  const proteinTarget = goals?.dailyProteinMax
+  const carbsTarget = goals?.dailyCarbsMax
+  const fiberTarget = goals?.dailyFiberMax
+
+  // compute start/end of today for logs query in YYYY-MM-DD format
+  const todayDateString = useMemo(() => {
+    const d = new Date(today)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }, [today])
+
+  const { data: todaysLogs } = useGetLogsByPatientQuery({ patientId: auth?.patientId || '', startDate: todayDateString, endDate: todayDateString }, { skip: !auth?.patientId })
+
+  // compute start/end of current week (Monday..Sunday) and format as YYYY-MM-DD
+  const weekRange = useMemo(() => {
+    const d = new Date(today)
+    const day = d.getDay()
+    const diffToMonday = (day + 6) % 7 // 0 -> Monday offset
+    const monday = new Date(d)
+    monday.setDate(d.getDate() - diffToMonday)
+    monday.setHours(0, 0, 0, 0)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    sunday.setHours(23, 59, 59, 999)
+    const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+    return { start: fmt(monday), end: fmt(sunday) }
+  }, [today])
+
+  const { data: weeklyLogs } = useGetLogsByPatientQuery({ patientId: auth?.patientId || '', startDate: weekRange.start, endDate: weekRange.end }, { skip: !auth?.patientId })
+
+  // compute today's nutrition totals — use logs where summary === false
+  const todaysSourceLogs = (todaysLogs || []).filter(Boolean)
+  const sourceForTotals = todaysSourceLogs.filter((l: any) => l.summary === false)
+  const proteinCurrent = sourceForTotals.reduce((sum: number, l: any) => sum + (Number(l.proteinGrams ?? 0) || 0), 0)
+  const carbsCurrent = sourceForTotals.reduce((sum: number, l: any) => sum + (Number(l.carbGrams ?? 0) || 0), 0)
+  const fiberCurrent = sourceForTotals.reduce((sum: number, l: any) => sum + (Number(l.fiberGrams ?? 0) || 0), 0)
+
+  const clamp = (v: number) => Math.max(0, Math.min(1, Number(v) || 0))
+  const proteinPct = proteinTarget ? clamp(proteinCurrent / proteinTarget) : 0
+  const carbsPct = carbsTarget ? clamp(carbsCurrent / carbsTarget) : 0
+  const fiberPct = fiberTarget ? clamp(fiberCurrent / fiberTarget) : 0
+
+  const bubbleStyle = (type: 'protein' | 'carbs' | 'fiber') => {
+    const base: any = {
+      width: 36,
+      height: 36,
+      minWidth: 36,
+      borderRadius: '50%',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: 600,
+      color: '#fff',
+      fontSize: 12,
+    }
+    if (type === 'protein') return { ...base, background: '#ff7b7b' }
+    if (type === 'carbs') return { ...base, background: '#7bbcff' }
+    return { ...base, background: '#6fcf97' }
+  }
+
+  const formatMacro = (v: any) => {
+    if (v == null || v === '—') return '—'
+    const n = Number(v)
+    if (Number.isNaN(n)) return '—'
+    return String(Math.round(n))
   }
 
   return (
@@ -72,42 +134,30 @@ export default function Track() {
       <section className="today-goals">
         <h3>Today's nutrition goals</h3>
         <div className="macros-row">
-          <div className="macro protein" onClick={() => setMacroModal('protein')} role="button" tabIndex={0}>
-            <div className="ring" style={{ ['--pct' as any]: 1 }}>
+          <div className="macro protein">
+            <div className="ring" style={{ ['--pct' as any]: proteinPct }}>
               <div className="ring-inner">
-                <div className="value">140g</div>
+                <div className="value">{proteinTarget ? `${proteinCurrent} / ${proteinTarget} g` : (proteinCurrent ? `${proteinCurrent}g` : '—')}</div>
               </div>
             </div>
-            <div className="sub">of 140g</div>
             <div className="label">Protein</div>
           </div>
 
-          <div className="macro carbs" onClick={() => setMacroModal('carbs')} role="button" tabIndex={0}>
-            <div className="ring" style={{ ['--pct' as any]: 0.7 }}>
+          <div className="macro carbs">
+            <div className="ring" style={{ ['--pct' as any]: carbsPct }}>
               <div className="ring-inner">
-                <div className="value">140g</div>
+                <div className="value">{carbsTarget ? `${carbsCurrent} / ${carbsTarget} g` : (carbsCurrent ? `${carbsCurrent}g` : '—')}</div>
               </div>
             </div>
-            <div className="sub">of 200g</div>
             <div className="label">Carbohydrates</div>
           </div>
-
-          <div className="macro fats" onClick={() => setMacroModal('fats')} role="button" tabIndex={0}>
-            <div className="ring" style={{ ['--pct' as any]: 0.75 }}>
+          
+          <div className="macro fiber">
+            <div className="ring" style={{ ['--pct' as any]: fiberPct }}>
               <div className="ring-inner">
-                <div className="value">30g</div>
+                <div className="value">{fiberTarget ? `${fiberCurrent} / ${fiberTarget} g` : (fiberCurrent ? `${fiberCurrent}g` : '—')}</div>
               </div>
             </div>
-            <div className="sub">of 40g</div>
-            <div className="label">Fats</div>
-          </div>
-          <div className="macro fiber" onClick={() => setMacroModal('fiber')} role="button" tabIndex={0}>
-            <div className="ring" style={{ ['--pct' as any]: 0.6 }}>
-              <div className="ring-inner">
-                <div className="value">18g</div>
-              </div>
-            </div>
-            <div className="sub">of 30g</div>
             <div className="label">Fiber</div>
           </div>
         </div>
@@ -128,17 +178,13 @@ export default function Track() {
                 } catch (e) {
                   parsed = null
                 }
-                const cal = parsed?.calories ?? '—'
-                const protein = parsed?.protein_g ?? parsed?.protein ?? '—'
-                const carbs = parsed?.carbs_g ?? parsed?.carbs ?? '—'
-                const fats = parsed?.fat_g ?? parsed?.fats_g ?? parsed?.fats ?? '—'
-                const fiber = parsed?.fiber_g ?? parsed?.fiber ?? '—'
+                const protein = parsed?.proteinGrams ?? parsed?.protein ?? '—'
+                const carbs = parsed?.carbGrams ?? parsed?.carbs ?? '—'
+                const fiber = parsed?.fiberGrams ?? parsed?.fiber ?? '—'
                 return (
                   <>
-                    <div className="meta-item calories">Calories: {cal}</div>
                     <div className="meta-item protein">Protein: {protein === '—' ? '—' : protein + ' g'}</div>
                     <div className="meta-item carbs">Carbs: {carbs === '—' ? '—' : carbs + ' g'}</div>
-                    <div className="meta-item fats">Fats: {fats === '—' ? '—' : fats + ' g'}</div>
                     <div className="meta-item fiber">Fiber: {fiber === '—' ? '—' : fiber + ' g'}</div>
                   </>
                 )
@@ -149,83 +195,187 @@ export default function Track() {
         </div>
       )}
 
-      {macroModal && (
-        <div className="log-modal-backdrop" onClick={() => setMacroModal(null)}>
-          <div className={`log-modal ${'macro-' + macroModal}`} onClick={(e) => e.stopPropagation()}>
-            <button className="close" onClick={() => setMacroModal(null)} aria-label="Close">✕</button>
-            <h4>Logs — {macroModal}</h4>
-            <div className={`log-list ${macroModal ? 'macro-' + macroModal : ''}`}>
-              {(() => {
-                const rows = filteredForMacro(macroModal)
-                if (!rows || rows.length === 0) return <div className="empty">No logs for today</div>
+      
 
-                const macrosAsList = ['protein', 'carbs', 'fats', 'fiber']
-                if (macrosAsList.includes(macroModal)) {
-                  const displayLabel = macroModal.charAt(0).toUpperCase() + macroModal.slice(1)
-                  const key = macroKeyFor(macroModal)
-                  return (
-                    <ul className={`log-list-plain ${'macro-' + macroModal}`}>
-                      {rows.map((r: any) => {
-                        const val = r.parsed ? (key === 'fat_g' ? (r.parsed.fat_g ?? r.parsed.fats_g ?? '—') : (r.parsed[key] ?? '—')) : '—'
-                        return (
-                          <li key={r.id} className="log-list-item">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div className="log-title">{r.title}</div>
-                              <div className="log-ts">{new Date(r.timestamp).toLocaleTimeString()}</div>
-                            </div>
-                            <div className="log-expanded">
-                              <div className="log-sub">{displayLabel}: {val}{typeof val === 'number' ? ' g' : ''}</div>
-                              <div className="log-sub">Calories: {r.parsed ? (r.parsed.calories ?? '—') : '—'}</div>
-                              <div className="log-sub">Carbs: {r.parsed ? (r.parsed.carbs_g ?? '—') : '—'} g</div>
-                              {r.parsed && r.parsed.fiber_g !== undefined && <div className="log-sub">Fiber: {r.parsed.fiber_g} g</div>}
-                            </div>
-                            {/* per-item summary removed */}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )
+      <div style={{ marginTop: 18, marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => setActiveTab('daily')}
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid transparent',
+            background: activeTab === 'daily' ? '#5b4fc6' : '#f3f4f6',
+            color: activeTab === 'daily' ? '#ffffff' : '#6b7280',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontWeight: 600,
+            minWidth: 120,
+            transition: 'background 140ms ease, color 140ms ease',
+          }}
+        >
+          Today's logs
+        </button>
+        <button
+          onClick={() => setActiveTab('weekly')}
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid transparent',
+            background: activeTab === 'weekly' ? '#5b4fc6' : '#f3f4f6',
+            color: activeTab === 'weekly' ? '#ffffff' : '#6b7280',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontWeight: 600,
+            minWidth: 120,
+            transition: 'background 140ms ease, color 140ms ease',
+          }}
+        >
+          Weekly logs
+        </button>
+      </div>
+
+      {activeTab === 'daily' && (
+        <section className="daily-logs">
+        <div className="logs-row">
+          {!todaysLogs || todaysLogs.length === 0 ? (
+            <div className="empty">No logs yet</div>
+          ) : (
+            todaysLogs
+              .filter((log: any) => {
+                if (!log || log.summary) return false
+                const topProtein = log.proteinGrams
+                const topCarb = log.carbGrams
+                const topFiber = log.fiberGrams
+                if (Number(topProtein || 0) > 0 || Number(topCarb || 0) > 0 || Number(topFiber || 0) > 0) return true
+                try {
+                  const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+                  const p = details?.proteinGrams ?? details?.protein ?? details?.protein_g
+                  const c = details?.carbGrams ?? details?.carbs ?? details?.carbs_g ?? details?.carb
+                  const f = details?.fiberGrams ?? details?.fiber ?? details?.fiber_g
+                  return Number(p || 0) > 0 || Number(c || 0) > 0 || Number(f || 0) > 0
+                } catch (e) {
+                  return false
                 }
-
-                return rows.map((r: any) => (
-                  <div key={r.id} className="log-card">
-                    <div className="log-title">{r.title}</div>
-                    <div className="log-ts">{new Date(r.timestamp).toLocaleTimeString()}</div>
-                    <div className="log-sub">{r.parsed ? (r.parsed[macroKeyFor(macroModal)] ?? r.parsed.fats_g ?? '') : ''}</div>
-                  </div>
-                ))
-              })()}
-            </div>
-          </div>
+              })
+              .map((log: any) => {
+                let parsed: any = {}
+                try {
+                  parsed = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+                } catch (e) {
+                  parsed = log.details || {}
+                }
+                const normalized = {
+                  ...parsed,
+                  proteinGrams: parsed?.proteinGrams ?? log.proteinGrams ?? parsed?.protein ?? parsed?.protein_g ?? null,
+                  carbGrams: parsed?.carbGrams ?? log.carbGrams ?? parsed?.carbs ?? parsed?.carbs_g ?? parsed?.carb ?? null,
+                  fiberGrams: parsed?.fiberGrams ?? log.fiberGrams ?? parsed?.fiber ?? parsed?.fiber_g ?? null,
+                }
+                const protein = normalized.proteinGrams ?? '—'
+                const carbs = normalized.carbGrams ?? '—'
+                const fiber = normalized.fiberGrams ?? '—'
+                const item = {
+                  id: log.id,
+                  title: log.description || 'Log',
+                  timestamp: log.logTime || Date.now(),
+                  details: JSON.stringify(normalized),
+                }
+                return (
+                  <button
+                    key={log.id}
+                    className="log-card"
+                    onClick={() => setSelectedLog(item)}
+                    style={{ width: '100%', padding: '8px 12px', textAlign: 'left' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="log-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                        <div className="log-ts" style={{ fontSize: 12, color: '#666' }}>{new Date(item.timestamp).toLocaleTimeString()}</div>
+                      </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span title={String(protein)} style={bubbleStyle('protein')}>{formatMacro(protein)}</span>
+                        <span title={String(carbs)} style={bubbleStyle('carbs')}>{formatMacro(carbs)}</span>
+                        <span title={String(fiber)} style={bubbleStyle('fiber')}>{formatMacro(fiber)}</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })
+          )}
         </div>
+        </section>
       )}
 
-      <section className="daily-logs">
-        <h3>Today's logs</h3>
+      {activeTab === 'weekly' && (
+        <section className="weekly-logs">
         <div className="logs-row">
-          {items.filter((it) => it.type === 'milestone').length === 0 && <div className="empty">No logs yet</div>}
-          {items
-            .filter((it) => it.type === 'milestone')
-            .map((it) => (
-              <button key={it.id} className="log-card" onClick={() => setSelectedLog(it)}>
-                  <div className="log-title">{it.title}</div>
-                  <div className="log-ts">{new Date(it.timestamp).toLocaleTimeString()}</div>
-                </button>
-            ))}
+          {!weeklyLogs || weeklyLogs.filter((l: any) => l.summary === false).length === 0 ? (
+            <div className="empty">No weekly logs</div>
+          ) : (
+            weeklyLogs
+              .filter((log: any) => {
+                if (!log || log.summary) return false
+                const topProtein = log.proteinGrams
+                const topCarb = log.carbGrams
+                const topFiber = log.fiberGrams
+                if (Number(topProtein || 0) > 0 || Number(topCarb || 0) > 0 || Number(topFiber || 0) > 0) return true
+                try {
+                  const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+                  const p = details?.proteinGrams ?? details?.protein ?? details?.protein_g
+                  const c = details?.carbGrams ?? details?.carbs ?? details?.carbs_g ?? details?.carb
+                  const f = details?.fiberGrams ?? details?.fiber ?? details?.fiber_g
+                  return Number(p || 0) > 0 || Number(c || 0) > 0 || Number(f || 0) > 0
+                } catch (e) {
+                  return false
+                }
+              })
+              .map((log: any) => {
+                let parsed: any = {}
+                try {
+                  parsed = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {})
+                } catch (e) {
+                  parsed = log.details || {}
+                }
+                const normalized = {
+                  ...parsed,
+                  proteinGrams: parsed?.proteinGrams ?? log.proteinGrams ?? parsed?.protein ?? parsed?.protein_g ?? null,
+                  carbGrams: parsed?.carbGrams ?? log.carbGrams ?? parsed?.carbs ?? parsed?.carbs_g ?? parsed?.carb ?? null,
+                  fiberGrams: parsed?.fiberGrams ?? log.fiberGrams ?? parsed?.fiber ?? parsed?.fiber_g ?? null,
+                }
+                const protein = normalized.proteinGrams ?? '—'
+                const carbs = normalized.carbGrams ?? '—'
+                const fiber = normalized.fiberGrams ?? '—'
+                const item = {
+                  id: log.id,
+                  title: log.description || 'Log',
+                  timestamp: log.logTime || Date.now(),
+                  details: JSON.stringify(normalized),
+                  type: 'weekly',
+                }
+                return (
+                  <button
+                    key={log.id}
+                    className="log-card"
+                    onClick={() => setSelectedLog(item)}
+                    style={{ width: '100%', padding: '8px 12px', textAlign: 'left' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="log-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                        <div className="log-ts" style={{ fontSize: 12, color: '#666' }}>{new Date(item.timestamp).toLocaleString()}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span title={String(protein)} style={bubbleStyle('protein')}>{formatMacro(protein)}</span>
+                        <span title={String(carbs)} style={bubbleStyle('carbs')}>{formatMacro(carbs)}</span>
+                        <span title={String(fiber)} style={bubbleStyle('fiber')}>{formatMacro(fiber)}</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })
+          )}
         </div>
-      </section>
-
-      <section className="weekly-logs">
-        <h3>Weekly logs</h3>
-        <div className="logs-row">
-          {weeklyItems.length === 0 && <div className="empty">No weekly logs</div>}
-          {weeklyItems.map((it: any) => (
-            <button key={it.id} className="log-card" onClick={() => setSelectedLog(it)}>
-              <div className="log-title">{it.title}</div>
-            </button>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   )
 }

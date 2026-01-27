@@ -24,7 +24,6 @@ export default function App() {
             <>
               <NavLink to="/chat" className={({ isActive }) => (isActive ? 'active' : '')}>Chat</NavLink>
               <NavLink to="/track" className={({ isActive }) => (isActive ? 'active' : '')}>Track</NavLink>
-              <NavLink to="/achievements" className={({ isActive }) => (isActive ? 'active' : '')}>Achievements</NavLink>
             </>
           )}
           {/** show create-account / sign-in when not authenticated; AuthNav handles that */}
@@ -36,6 +35,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/chat" replace />} />
           <Route path="/chat" element={auth?.token ? <Chat /> : <Navigate to="/sign-in" replace />} />
+          
           <Route path="/track" element={auth?.token ? <Track /> : <Navigate to="/sign-in" replace />} />
           <Route path="/achievements" element={auth?.token ? <Achievements /> : <Navigate to="/sign-in" replace />} />
           <Route path="/create-account" element={<CreateAccount />} />
@@ -50,7 +50,7 @@ function AuthNav() {
   const auth = useSelector((s: RootState) => s.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { data: patient, isFetching } = useGetPatientQuery(auth?.patientId || '', { skip: !auth?.patientId })
+  const { data: patient, isFetching } = useGetPatientQuery(auth?.patientId || '', { skip: !auth?.token || !auth?.patientId })
 
   if (auth?.token) {
     const handleLogout = () => {
@@ -58,9 +58,21 @@ function AuthNav() {
       navigate('/sign-in')
     }
 
+    const roleLabel = (() => {
+      const p: any = patient
+      if (!p) return 'Patient'
+      const roles = p.roles || (p.role ? [p.role] : null)
+      if (Array.isArray(roles)) {
+        return roles.map((r: string) => String(r).toLowerCase()).includes('clinician') ? 'Clinician' : 'Patient'
+      }
+      return (String(p.role || '').toLowerCase() === 'clinician') ? 'Clinician' : 'Patient'
+    })()
+
     return (
       <>
-        <span className="nav-username">{patient?.name ?? (isFetching ? 'Loading...' : 'Loading...')}</span>
+        <span className="nav-username">{patient?.name ?? (isFetching ? 'Loading...' : 'Loading...')}
+          <span className="nav-role">{roleLabel}</span>
+        </span>
         <button
           title="Logout"
           onClick={handleLogout}

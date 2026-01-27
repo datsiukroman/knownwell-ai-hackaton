@@ -26,8 +26,15 @@ const chatSlice = createSlice({
     setMessages(state, action: PayloadAction<Message[]>) {
       state.messages = action.payload
     }
+    ,
+    updateMessage(state, action: PayloadAction<{ id: string; changes: Partial<Message> }>) {
+      const idx = state.messages.findIndex(m => m.id === action.payload.id)
+      if (idx !== -1) {
+        state.messages[idx] = { ...state.messages[idx], ...action.payload.changes }
+      }
+    }
   }
 })
 
-export const { addMessage, setMessages } = chatSlice.actions
+export const { addMessage, setMessages, updateMessage } = chatSlice.actions
 export default chatSlice.reducer

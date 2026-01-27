@@ -20,8 +20,10 @@ export default function Login() {
     setError(null)
     try {
       const res: any = await signIn({ username: form.username, password: form.password }).unwrap()
-      // store token and patient id (if returned)
-      dispatch(setAuth({ token: res.token, patientId: res.patientId }))
+      // determine role: clinician when clinicianId present, otherwise patient when patientId present
+      const role = res.clinicianId ? 'clinician' : (res.patientId ? 'patient' : null)
+      // store token, patient id (if returned), username and role
+      dispatch(setAuth({ token: res.token, patientId: res.patientId, username: res.username ?? form.username, role }))
       navigate('/')
     } catch (err: any) {
       setError(err?.data?.message || 'Sign in failed')

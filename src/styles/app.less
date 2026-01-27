@@ -273,3 +273,19 @@ body.chat-page { overflow: hidden }
   .create-account-page { padding: 16px; margin: 12px; }
 }
 
+/* Patients list styles */
+.patients-page .patients-list ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px }
+.patients-page .patients-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px; background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); border: 1px solid #eef0f6; box-shadow: 0 6px 18px rgba(16,24,40,0.04); transition: box-shadow 140ms ease, background 140ms ease; cursor: pointer }
+.patients-page .patients-list li:hover { box-shadow: 0 10px 26px rgba(16,24,40,0.06); background: fade(@primary, 3%) }
+.patients-page .patient-name { font-weight: 700; font-size: 15px; color: #0f1724; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.patients-page .patient-meta { color: @muted-text; font-size: 13px }
+.patients-page .patients-list li .patient-meta { margin-left: 8px }
+
+@media (max-width: 720px) {
+  .patients-page .patients-list li { padding: 10px; flex-direction: column; align-items: flex-start }
+  .patients-page .patients-list li .patient-meta { margin-left: 0; margin-top: 6px }
+}
+
+/* empty placeholder for clinician's patient list */
+.patients-page .patients-empty { color: fade(@muted-text, 70%); font-size: 13px; padding: 10px 4px; }
+

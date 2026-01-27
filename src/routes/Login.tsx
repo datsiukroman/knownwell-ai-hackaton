@@ -5,7 +5,7 @@ import { setAuth } from '../store/slices/authSlice'
 import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ username: '', password: '' })
   const [signIn, { isLoading }] = useSignInMutation()
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -19,8 +19,9 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     try {
-      const res: any = await signIn({ email: form.email, password: form.password }).unwrap()
-      dispatch(setAuth({ token: res.token, username: res.username }))
+      const res: any = await signIn({ username: form.username, password: form.password }).unwrap()
+      // store token and patient id (if returned)
+      dispatch(setAuth({ token: res.token, patientId: res.patientId }))
       navigate('/')
     } catch (err: any) {
       setError(err?.data?.message || 'Sign in failed')
@@ -32,8 +33,8 @@ export default function Login() {
       <h2>Sign In</h2>
       <form onSubmit={handleSubmit} noValidate>
         <div className="form-row">
-          <label>Email *</label>
-          <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@example.com" required />
+          <label>Username *</label>
+          <input name="username" type="text" value={form.username} onChange={handleChange} placeholder="e.g. johndoe" required />
         </div>
 
         <div className="form-row">
@@ -44,7 +45,10 @@ export default function Login() {
         {error && <div className="error">{error}</div>}
 
         <div className="form-actions">
-          <button type="submit" disabled={isLoading}>Sign In</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading && <span className="spinner" aria-hidden />}
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
         </div>
       </form>
     </div>

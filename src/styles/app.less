@@ -46,7 +46,7 @@ body.chat-page { overflow: hidden }
 .app-header nav .nav-username { margin-left: 12px; color: rgba(255,255,255,0.95); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center }
 .app-header nav a.active { background: rgba(255,255,255,0.12); color: #fff }
 
-.app-root { min-height: 100vh; display: flex; flex-direction: column; padding-top: 56px }
+.app-root { min-height: 100vh; display: flex; flex-direction: column; padding-top: 56px; box-sizing: border-box }
 .app-main { padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column }
 
 /* Center page content and constrain width */
@@ -224,6 +224,24 @@ body.chat-page { overflow: hidden }
 .create-account-page .form-actions { margin-top: 24px; display: flex; justify-content: flex-end; }
 .create-account-page .form-actions button { background: @primary; color: #fff; padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600 }
 .create-account-page .form-actions button:hover { background: darken(@primary, 6%); box-shadow: none }
+
+/* Secondary button style (e.g. Back) */
+.create-account-page .form-actions .secondary { background: transparent; color: @primary; border: 1px solid rgba(91,79,198,0.12); padding: 10px 14px; border-radius: 8px; font-weight: 600 }
+.create-account-page .form-actions .secondary:hover { background: fade(@primary, 6%); box-shadow: none }
+
+/* Small inline spinner */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 720px) {
   .create-account-page { padding: 16px; margin: 12px; }

@@ -9,6 +9,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { RiLogoutCircleRLine } from 'react-icons/ri'
 import { RootState } from './store'
+import { useGetPatientQuery } from './store/api/patientsApi'
 import { clearAuth } from './store/slices/authSlice'
 
 export default function App() {
@@ -49,6 +50,7 @@ function AuthNav() {
   const auth = useSelector((s: RootState) => s.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { data: patient, isFetching } = useGetPatientQuery(auth?.patientId || '', { skip: !auth?.patientId })
 
   if (auth?.token) {
     const handleLogout = () => {
@@ -58,7 +60,7 @@ function AuthNav() {
 
     return (
       <>
-        <span className="nav-username">{auth.username}</span>
+        <span className="nav-username">{patient?.name ?? (isFetching ? 'Loading...' : 'Loading...')}</span>
         <button
           title="Logout"
           onClick={handleLogout}

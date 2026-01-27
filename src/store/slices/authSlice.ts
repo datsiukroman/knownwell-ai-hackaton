@@ -2,32 +2,33 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 type AuthState = {
   token: string | null
-  username: string | null
+  patientId?: string | null
 }
 
 const initialState: AuthState = {
   token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
-  username: typeof window !== 'undefined' ? localStorage.getItem('username') : null
+  patientId: typeof window !== 'undefined' ? localStorage.getItem('patientId') : null
 }
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setAuth(state, action: PayloadAction<{ token: string; username: string }>) {
+    setAuth(state, action: PayloadAction<{ token: string; patientId?: string }>) {
       state.token = action.payload.token
-      state.username = action.payload.username
+      state.patientId = action.payload.patientId ?? null
       try {
         localStorage.setItem('token', action.payload.token)
-        localStorage.setItem('username', action.payload.username)
+        // username is not persisted to localStorage
+        if (action.payload.patientId) localStorage.setItem('patientId', action.payload.patientId)
+        else localStorage.removeItem('patientId')
       } catch {}
     },
     clearAuth(state) {
       state.token = null
-      state.username = null
       try {
         localStorage.removeItem('token')
-        localStorage.removeItem('username')
+        // username not stored, nothing to remove
       } catch {}
     }
   }

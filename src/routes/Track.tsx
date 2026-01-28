@@ -1,64 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import React, { useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { RootState } from '../store'
-import mockApi from '../api/mockApi'
-import { setItems } from '../store/slices/trackSlice'
 import { useGetGoalsByPatientQuery } from '../store/api/goalsApi'
 import { useGetLogsByPatientQuery } from '../store/api/logsApi'
 
 export default function Track() {
-  const dispatch = useDispatch()
   const [selectedLog, setSelectedLog] = useState<any | null>(null)
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
 
-  useEffect(() => {
-    mockApi.loadInitialData().then((res) => {
-      // normalize track details to use new API field names when possible
-      const normalized = (res.track || []).map((it: any) => {
-        try {
-          const details = typeof it.details === 'string' ? JSON.parse(it.details) : it.details
-          if (details) {
-            const norm = {
-              ...details,
-              proteinGrams: details.proteinGrams ?? details.protein_g ?? details.protein ?? details.proteinGrams,
-              carbGrams: details.carbGrams ?? details.carbs_g ?? details.carb ?? details.carbGrams,
-              fiberGrams: details.fiberGrams ?? details.fiber_g ?? details.fiber ?? details.fiberGrams,
-            }
-            return { ...it, details: typeof it.details === 'string' ? JSON.stringify(norm) : norm }
-          }
-        } catch (e) {
-          // ignore
-        }
-        return it
-      })
-      dispatch(setItems(normalized))
-    })
-  }, [dispatch])
-
-  const macroKeyFor = (macro: string) => {
-    switch (macro) {
-      case 'protein':
-        return 'proteinGrams'
-      case 'carbs':
-        return 'carbGrams'
-      case 'fiber':
-        return 'fiberGrams'
-      default:
-        return null
-    }
-  }
+ 
 
   const today = useMemo(() => new Date(), [])
 
   const isSelectedWeekly = (sel: any | null) => sel && sel.type === 'weekly'
-
-  const filteredForMacro = (macro: string) => {
-    const key = macroKeyFor(macro)
-    return []
-  }
+  
 
   const auth = useSelector((s: RootState) => s.auth)
-  const { data: goals } = useGetGoalsByPatientQuery(auth?.patientId || '', { skip: !auth?.patientId })
+  const { data: goals } = useGetGoalsByPatientQuery(String(auth?.patientId || ''), { skip: !auth?.patientId })
   const proteinTarget = goals?.dailyProteinMax
   const carbsTarget = goals?.dailyCarbsMax
   const fiberTarget = goals?.dailyFiberMax
@@ -72,7 +30,10 @@ export default function Track() {
     return `${y}-${m}-${day}`
   }, [today])
 
-  const { data: todaysLogs } = useGetLogsByPatientQuery({ patientId: auth?.patientId || '', startDate: todayDateString, endDate: todayDateString }, { skip: !auth?.patientId })
+  const { data: todaysLogs } = useGetLogsByPatientQuery(
+    { patientId: String(auth?.patientId || ''), startDate: todayDateString, endDate: todayDateString },
+    { skip: !auth?.patientId, refetchOnMountOrArgChange: true }
+  )
 
   // compute start/end of current week (Monday..Sunday) and format as YYYY-MM-DD
   const weekRange = useMemo(() => {
@@ -89,7 +50,7 @@ export default function Track() {
     return { start: fmt(monday), end: fmt(sunday) }
   }, [today])
 
-  const { data: weeklyLogs } = useGetLogsByPatientQuery({ patientId: auth?.patientId || '', startDate: weekRange.start, endDate: weekRange.end }, { skip: !auth?.patientId })
+  const { data: weeklyLogs } = useGetLogsByPatientQuery({ patientId: String(auth?.patientId || ''), startDate: weekRange.start, endDate: weekRange.end }, { skip: !auth?.patientId })
 
   // compute today's nutrition totals — use logs where summary === false
   const todaysSourceLogs = (todaysLogs || []).filter(Boolean)
@@ -282,7 +243,7 @@ export default function Track() {
                 return (
                   <button
                     key={log.id}
-                    className="log-card"
+                    className="log-card clickable"
                     onClick={() => setSelectedLog(item)}
                     style={{ width: '100%', padding: '8px 12px', textAlign: 'left' }}
                   >
@@ -354,7 +315,7 @@ export default function Track() {
                 return (
                   <button
                     key={log.id}
-                    className="log-card"
+                    className="log-card clickable"
                     onClick={() => setSelectedLog(item)}
                     style={{ width: '100%', padding: '8px 12px', textAlign: 'left' }}
                   >

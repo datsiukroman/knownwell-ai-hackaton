@@ -5,6 +5,7 @@ const baseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080
 
 export const chatApi = createApi({
   reducerPath: 'chatApi',
+  tagTypes: ['Goals', 'Logs'],
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers, { getState }) => {
@@ -16,6 +17,7 @@ export const chatApi = createApi({
   endpoints: (build) => ({
     postChat: build.mutation<any, { message: string; imageData?: string; imageMimeType?: string }>({
       query: (body) => ({ url: '/api/chat', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Goals' as const, id: 'LIST' }, { type: 'Logs' as const, id: 'LIST' }],
     }),
     getHistory: build.query<any[], string>({
       query: (patientId) => `/api/chat/history/${patientId}`,

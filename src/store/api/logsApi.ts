@@ -20,13 +20,14 @@ export const logsApi = createApi({
         url: `/api/logs/patient/${patientId}`,
         params: startDate || endDate ? { startDate, endDate } : undefined,
       }),
-      providesTags: (result) =>
+      providesTags: (result, error, arg) =>
         result
           ? [
               ...result.map((r: any) => ({ type: 'Logs' as const, id: r.id })),
-              { type: 'Logs', id: 'LIST' },
+              { type: 'Logs' as const, id: 'LIST' },
+              { type: 'Logs' as const, id: `patient-${arg.patientId}` },
             ]
-          : [{ type: 'Logs', id: 'LIST' }],
+          : [{ type: 'Logs' as const, id: 'LIST' }, { type: 'Logs' as const, id: `patient-${arg.patientId}` }],
     }),
     createLog: build.mutation<any, any>({
       query: (body) => ({
@@ -34,9 +35,16 @@ export const logsApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: 'Logs', id: 'LIST' }],
+      invalidatesTags: (result, error, arg) => [{ type: 'Logs' as const, id: 'LIST' }, { type: 'Logs' as const, id: `patient-${arg.patientId}` }],
+    }),
+    deleteLog: build.mutation<any, string>({
+      query: (id: string) => ({
+        url: `/api/logs/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [{ type: 'Logs', id }, { type: 'Logs', id: 'LIST' }],
     }),
   }),
 })
 
-export const { useGetLogsByPatientQuery, useCreateLogMutation } = logsApi
+export const { useGetLogsByPatientQuery, useCreateLogMutation, useDeleteLogMutation } = logsApi

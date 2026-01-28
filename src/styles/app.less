@@ -135,14 +135,14 @@ body.chat-page { overflow: hidden }
 .daily-logs { background: white; padding: 0; border-radius: 8px; margin-bottom: 18px }
 .daily-logs h3 { margin: 0 0 12px; font-size: 16px }
 .logs-row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; max-height: 400px; overflow: auto }
-.log-card { padding: 12px; border: 1px solid #eef0f6; background: #fff; border-radius: 8px; width: 220px; text-align: left; cursor: pointer }
-.log-card:hover {
+.log-card { padding: 12px; border: 1px solid #eef0f6; background: #fff; border-radius: 8px; width: 220px; text-align: left; cursor: pointer; box-sizing: border-box }
+.log-card.clickable:hover {
   background: fade(@primary, 6%);
   box-shadow: 0 6px 16px rgba(16,24,40,0.04);
 }
 
 /* Keep focus non-shifting: use ring instead of adding border-left */
-.log-card:focus {
+.log-card.clickable:focus {
   outline: none;
   background: fade(@primary, 6%);
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
@@ -153,7 +153,7 @@ body.chat-page { overflow: hidden }
 
 /* Modal for viewing a single log */
 .log-modal-backdrop { position: fixed; inset: 0; background: rgba(16,24,40,0.6); display:flex; align-items: center; justify-content: center; z-index: 2000 }
-.log-modal { background: white; padding: 20px; border-radius: 8px; width: min(680px, calc(100% - 40px)); box-shadow: 0 20px 40px rgba(16,24,40,0.18) }
+.log-modal { background: white; padding: 20px; border-radius: 8px; width: min(680px, calc(100% - 40px)); box-shadow: 0 20px 40px rgba(16,24,40,0.18); height: min(70vh, 560px); overflow: auto }
 .log-modal .close { float: right; background: none; border: none; font-size: 16px; cursor: pointer }
  
 /* Plain list style for protein logs in the macro modal */
@@ -168,7 +168,7 @@ body.chat-page { overflow: hidden }
 .log-list-plain .log-expanded { display:flex; gap:8px; flex-wrap:wrap }
 .log-modal .log-list-plain .log-list-item { cursor: default }
 .log-modal .log-list-plain .log-list-item:hover { background: transparent }
-.log-modal h4 { margin-top: 0 }
+.log-modal h4 { margin: 0 0 18px }
 .log-meta { margin-top: 24px; display:flex; gap:12px; flex-wrap:wrap }
 .log-meta .meta-item { background: #fafafa; padding: 10px 12px; border-radius: 6px; min-width: 120px }
 .log-meta .meta-item.calories { display: none }
@@ -267,7 +267,18 @@ body.chat-page { overflow: hidden }
 
 /* History page loading */
 .history-loading { display:flex; justify-content:center; align-items: center; padding: 12px; height: calc(100vh - 260px); box-sizing: border-box }
+.log-modal .modal-loading { display:flex; justify-content:center; align-items: center; padding: 12px; height: 100%; box-sizing: border-box }
 .loading-circle { width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.08); border-top-color: @primary; border-radius: 50%; animation: spin 1s linear infinite }
+
+/* Patient dialog: give logs wrapper a bit of breathing room */
+.log-modal .log-list-plain {
+  margin-top: 20px;
+
+  /* Ensure expanded plain log items don't show pointer cursor */
+  .log-card {
+    cursor: default;
+  }
+}
 
 @media (max-width: 720px) {
   .create-account-page { padding: 16px; margin: 12px; }
@@ -275,11 +286,52 @@ body.chat-page { overflow: hidden }
 
 /* Patients list styles */
 .patients-page .patients-list ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px }
-.patients-page .patients-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px; background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); border: 1px solid #eef0f6; box-shadow: 0 6px 18px rgba(16,24,40,0.04); transition: box-shadow 140ms ease, background 140ms ease; cursor: pointer }
-.patients-page .patients-list li:hover { box-shadow: 0 10px 26px rgba(16,24,40,0.06); background: fade(@primary, 3%) }
+.patients-page .patients-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px; background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); border: 1px solid #eef0f6; box-shadow: 0 6px 18px rgba(16,24,40,0.04); transition: box-shadow 140ms ease, background 140ms ease; cursor: default }
+.patients-page .patients-list li.clickable { cursor: pointer }
+.patients-page .patients-list li.clickable:hover { box-shadow: 0 10px 26px rgba(16,24,40,0.06); background: fade(@primary, 3%) }
+
+.patients-page .summary-line { margin-top: 18px; border-radius: 10px; padding: 12px 14px; background: #f4efff; border: 1px solid #eef0f6; }
+.patients-page .summary-line .macro { display: flex; flex-direction: column; align-items: center }
+.patients-page .summary-line .macro .ring { --size: 72px }
+.patients-page .summary-line .macro .ring-inner .value { font-size: 13px }
+.patients-page .summary-line .log-card { width: 100%; box-sizing: border-box }
 .patients-page .patient-name { font-weight: 700; font-size: 15px; color: #0f1724; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .patients-page .patient-meta { color: @muted-text; font-size: 13px }
 .patients-page .patients-list li .patient-meta { margin-left: 8px }
+.patients-page .summary-line > div:nth-child(2) { margin-top: 24px; }
+
+/* Macro edit icon and popover inside Patient modal */
+.macro { position: relative; overflow: visible }
+.ring { position: relative }
+.ring .edit-icon { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; display:flex; align-items:center; justify-content:center; border-radius: 10px; background: rgba(0,0,0,0.12); opacity: 0; transition: opacity 140ms ease, background 120ms ease; z-index: 80 }
+.ring:hover .edit-icon { opacity: 1; background: rgba(0,0,0,0.18) }
+.ring .edit-icon svg { display: block; fill: #fff }
+.edit-popover { position: absolute; right: 4px; top: 40px; width: 200px; background: white; border: 1px solid #eef0f6; box-shadow: 0 8px 24px rgba(16,24,40,0.08); padding: 10px; border-radius: 8px; z-index: 40 }
+.edit-popover input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6e9f2;
+  box-sizing: border-box;
+  font-size: 16px;
+  text-align: center;
+  background: #fff;
+  box-shadow: inset 0 2px 6px rgba(16,24,40,0.04);
+}
+.edit-popover input:focus { outline: none; border-color: fade(@primary, 40%); box-shadow: 0 6px 18px rgba(91,79,198,0.08); }
+/* keep native number controls but slightly smaller */
+.edit-popover input[type=number]::-webkit-outer-spin-button,
+.edit-popover input[type=number]::-webkit-inner-spin-button { margin-left: 6px; }
+.edit-popover button { padding: 6px 8px; border-radius: 6px; border: 1px solid transparent; background: #f3f4f6; cursor: pointer }
+.edit-popover button + button { margin-left: 6px }
+
+/* Patient modal: smaller, lighter titles for log items */
+.patients-page .log-modal .log-title { font-size: 13px; color: @muted-text; font-weight: 600 }
+
+/* Small delete icon for inline log list rows */
+.log-list-plain .delete-log { width: 36px; height: 36px; padding: 6px; border-radius: 8px; background: transparent; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer }
+.log-list-plain .delete-log:hover { background: rgba(239,68,68,0.08) }
+.log-list-plain .delete-log svg { display: block }
 
 @media (max-width: 720px) {
   .patients-page .patients-list li { padding: 10px; flex-direction: column; align-items: flex-start }

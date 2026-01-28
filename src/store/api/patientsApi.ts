@@ -41,6 +41,9 @@ export const patientsApi = createApi({
       query: (id) => ({ url: `/api/clinician/patients/${id}/unassign`, method: 'POST' }),
       invalidatesTags: [{ type: 'Patients', id: 'LIST' }],
     }),
+    getPatientSummary: build.query<any, string>({
+      query: (id) => `/api/clinician/patients/${id}/summary`,
+    }),
   }),
 })
 
@@ -50,4 +53,5 @@ export const {
   useGetClinicianPatientsQuery,
   useAssignPatientMutation,
   useUnassignPatientMutation,
+  useGetPatientSummaryQuery,
 } = patientsApi

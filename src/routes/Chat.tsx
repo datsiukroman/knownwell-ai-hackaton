@@ -8,7 +8,8 @@ import { addMessage, setMessages, updateMessage, Message } from '../store/slices
 import { setItems, addItemAndPersist } from '../store/slices/trackSlice'
 import mockApi from '../api/mockApi'
 import { usePostChatMutation, useGetHistoryQuery } from '../store/api/chatApi'
-import { useCreateLogMutation } from '../store/api/logsApi'
+import { useCreateLogMutation, useGetLogsByPatientQuery, logsApi } from '../store/api/logsApi'
+import { useGetGoalsByPatientQuery, goalsApi } from '../store/api/goalsApi'
 
 export default function Chat() {
   const dispatch = useDispatch()
@@ -20,6 +21,13 @@ export default function Chat() {
   const [postChat, { isLoading }] = usePostChatMutation()
   const [createLog] = useCreateLogMutation()
   const auth = useSelector((s: RootState) => s.auth)
+  const today = new Date()
+  const y = today.getFullYear()
+  const m = String(today.getMonth() + 1).padStart(2, '0')
+  const d = String(today.getDate()).padStart(2, '0')
+  const dateStr = `${y}-${m}-${d}`
+  const { refetch: refetchGoals } = useGetGoalsByPatientQuery(String(auth?.patientId || ''), { skip: !auth?.patientId })
+  const { refetch: refetchLogs } = useGetLogsByPatientQuery({ patientId: String(auth?.patientId || ''), startDate: dateStr, endDate: dateStr }, { skip: !auth?.patientId })
   const { data: historyItems, isLoading: historyLoading } = useGetHistoryQuery(auth?.patientId || '', { skip: !auth?.patientId })
 
   // quick replies removed
@@ -61,16 +69,34 @@ export default function Chat() {
       if (norm) {
         dispatch(addItemAndPersist({ id: uuid(), type: 'milestone', title: 'Analysis from chat', details: JSON.stringify(norm), timestamp: Date.now() } as any))
         if (auth?.patientId) {
-          createLog({
-            patientId: auth.patientId,
-            description: 'Analysis from chat',
-            details: JSON.stringify(norm),
-            proteinGrams: norm.proteinGrams ?? null,
-            carbGrams: norm.carbGrams ?? null,
-            fiberGrams: norm.fiberGrams ?? null,
-            logTime: new Date().toISOString(),
-            summary: false,
-          }).catch(() => {})
+          try {
+            const created = await createLog({
+              patientId: auth.patientId,
+              description: 'Analysis from chat',
+              details: JSON.stringify(norm),
+              proteinGrams: norm.proteinGrams ?? null,
+              carbGrams: norm.carbGrams ?? null,
+              fiberGrams: norm.fiberGrams ?? null,
+              logTime: new Date().toISOString(),
+              summary: false,
+            }).unwrap()
+            try { refetchGoals(); refetchLogs() } catch (e) {}
+            try {
+              // optimistically insert into today's logs cache so Track updates immediately
+              try {
+                dispatch(logsApi.util.updateQueryData('getLogsByPatient', { patientId: String(auth.patientId), startDate: dateStr, endDate: dateStr }, (draft: any) => {
+                  if (Array.isArray(draft)) draft.unshift(created)
+                }))
+              } catch (e) {}
+              // also trigger forced refetch of today's logs and goals for Track page consumers
+              try { dispatch(logsApi.util.invalidateTags([{ type: 'Logs', id: 'LIST' }])) } catch (e) {}
+              try { dispatch(logsApi.endpoints.getLogsByPatient.initiate({ patientId: String(auth.patientId), startDate: dateStr, endDate: dateStr }, { forceRefetch: true })) } catch (e) {}
+              try { dispatch(goalsApi.util.invalidateTags([{ type: 'Goals', id: String(auth.patientId) }, { type: 'Goals', id: 'LIST' }])) } catch (e) {}
+              try { dispatch(goalsApi.endpoints.getGoalsByPatient.initiate(String(auth.patientId), { forceRefetch: true })) } catch (e) {}
+            } catch (e) {}
+          } catch (e) {
+            // ignore createLog errors
+          }
         }
       }
     } catch (err) {
@@ -105,8 +131,6 @@ export default function Chat() {
     const typingId = uuid()
     dispatch(addMessage({ id: typingId, from: 'bot', timestamp: Date.now() }))
 
-    
-
     try {
       // dataUrl is like "data:<mime>;base64,<data>" — strip prefix
       const parts = dataUrl.split(',')
@@ -123,16 +147,26 @@ export default function Chat() {
       if (norm) {
         dispatch(addItemAndPersist({ id: uuid(), type: 'milestone', title: 'Meal logged via photo', details: JSON.stringify(norm), timestamp: Date.now() } as any))
         if (auth?.patientId) {
-          createLog({
-            patientId: auth.patientId,
-            description: 'Meal logged via photo',
-            details: JSON.stringify(norm),
-            proteinGrams: norm.proteinGrams ?? null,
-            carbGrams: norm.carbGrams ?? null,
-            fiberGrams: norm.fiberGrams ?? null,
-            logTime: new Date().toISOString(),
-            summary: false,
-          }).catch(() => {})
+          try {
+            const created = await createLog({
+              patientId: auth.patientId,
+              description: 'Meal logged via photo',
+              details: JSON.stringify(norm),
+              proteinGrams: norm.proteinGrams ?? null,
+              carbGrams: norm.carbGrams ?? null,
+              fiberGrams: norm.fiberGrams ?? null,
+              logTime: new Date().toISOString(),
+              summary: false,
+            }).unwrap()
+            try { refetchGoals(); refetchLogs() } catch (e) {}
+              try { dispatch(logsApi.util.updateQueryData('getLogsByPatient', { patientId: String(auth.patientId), startDate: dateStr, endDate: dateStr }, (draft: any) => { if (Array.isArray(draft)) draft.unshift(created) })) } catch (e) {}
+              try { dispatch(logsApi.util.invalidateTags([{ type: 'Logs', id: 'LIST' }])) } catch (e) {}
+              try { dispatch(logsApi.endpoints.getLogsByPatient.initiate({ patientId: String(auth.patientId), startDate: dateStr, endDate: dateStr }, { forceRefetch: true })) } catch (e) {}
+              try { dispatch(goalsApi.util.invalidateTags([{ type: 'Goals', id: String(auth.patientId) }, { type: 'Goals', id: 'LIST' }])) } catch (e) {}
+              try { dispatch(goalsApi.endpoints.getGoalsByPatient.initiate(String(auth.patientId), { forceRefetch: true })) } catch (e) {}
+          } catch (e) {
+            // ignore createLog errors
+          }
         }
       }
 
@@ -149,16 +183,22 @@ export default function Chat() {
 
       dispatch(addItemAndPersist({ id: uuid(), type: 'milestone', title: 'Meal logged via photo', details: JSON.stringify(norm), timestamp: Date.now() } as any))
       if (auth?.patientId) {
-        createLog({
-          patientId: auth.patientId,
-          description: 'Meal logged via photo',
-          details: JSON.stringify(norm),
-          proteinGrams: norm.proteinGrams ?? null,
-          carbGrams: norm.carbGrams ?? null,
-          fiberGrams: norm.fiberGrams ?? null,
-          logTime: new Date().toISOString(),
-          summary: false,
-        }).catch(() => {})
+        try {
+          const created = await createLog({
+            patientId: auth.patientId,
+            description: 'Meal logged via photo',
+            details: JSON.stringify(norm),
+            proteinGrams: norm.proteinGrams ?? null,
+            carbGrams: norm.carbGrams ?? null,
+            fiberGrams: norm.fiberGrams ?? null,
+            logTime: new Date().toISOString(),
+            summary: false,
+          }).unwrap()
+          try { refetchGoals(); refetchLogs() } catch (e) {}
+          try { dispatch(logsApi.util.updateQueryData('getLogsByPatient', { patientId: String(auth.patientId), startDate: dateStr, endDate: dateStr }, (draft: any) => { if (Array.isArray(draft)) draft.unshift(created) })) } catch (e) {}
+        } catch (e) {
+          // ignore errors
+        }
       }
       mockApi.persistChat([...messages, userMsg, { id: typingId, from: 'bot', text: botText, timestamp: Date.now(), meta: norm }])
       setTimeout(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }), 50)
